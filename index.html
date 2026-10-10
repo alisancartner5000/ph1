@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>گالری</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#101215;
+    --surface:#191c21;
+    --border:#2b3038;
+    --text:#eceef1;
+    --text-dim:#8b9099;
+    --accent:#ff9f1c;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Vazirmatn',sans-serif;}
+
+  header{padding:28px 24px 0;max-width:1100px;margin:0 auto;animation:slideDown .5s ease;}
+  h1{font-size:26px;font-weight:800;margin:0 0 4px;}
+  .sub{color:var(--text-dim);font-size:14px;margin:0 0 20px;}
+  @keyframes slideDown{from{opacity:0;transform:translateY(-12px);}to{opacity:1;transform:translateY(0);}}
+
+  .wrap{max-width:1100px;margin:0 auto;padding:0 24px 60px;}
+
+  .tabs{display:flex;gap:8px;margin-bottom:24px;overflow-x:auto;}
+
+  .ph{
+
+    color: #ff9f1c;
+  }
+  .tab{
+    padding:9px 18px;border-radius:20px;background:var(--surface);
+    color:var(--text-dim);font-size:14px;font-weight:600;cursor:pointer;
+    white-space:nowrap;transition:background .2s,color .2s,transform .15s;border:1px solid var(--border);
+  }
+  .tab.active{background:var(--accent);color:#241505;border-color:var(--accent);}
+  .tab:not(.active):hover{background:#20242b;color:var(--text);}
+  .tab:active{transform:scale(.94);}
+
+  .panel{display:none;}
+  .panel.active{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    grid-auto-rows:180px;
+    gap:12px;
+  }
+  @media (max-width:700px){
+    .panel.active{grid-template-columns:repeat(2,1fr);}
+  }
+
+  .tile{
+    position:relative;border-radius:12px;overflow:hidden;background:var(--surface);
+    border:1px solid var(--border);cursor:pointer;
+    opacity:0;transform:translateY(14px);animation:tileIn .45s ease forwards;
+  }
+  @keyframes tileIn{to{opacity:1;transform:translateY(0);}}
+
+  .tile.video-tile{grid-column:span 2;grid-row:span 2;}
+
+  .tile img, .tile video{
+    width:100%;height:100%;object-fit:cover;display:block;
+    transition:transform .4s ease;
+  }
+  .tile:hover img, .tile:hover video{transform:scale(1.05);}
+
+  .badge{
+    position:absolute;top:8px;right:8px;background:rgba(0,0,0,.65);
+    color:#fff;font-size:11px;padding:3px 8px;border-radius:6px;
+    display:flex;align-items:center;gap:4px;
+  }
+
+
+  /* Video-links tab */
+  .panel.links-panel.active{grid-auto-rows:auto;}
+  .link-tile{
+    aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:8px;background:linear-gradient(135deg,#1d2128,#14171b);
+    transition:border-color .2s, transform .25s ease;
+  }
+  .link-tile:hover{border-color:var(--accent);transform:translateY(-4px);}
+  .link-tile .play{
+    width:46px;height:46px;border-radius:50%;background:var(--accent);color:#241505;
+    display:flex;align-items:center;justify-content:center;font-size:18px;
+    transition:transform .25s ease;
+  }
+  .link-tile:hover .play{transform:scale(1.12);}
+  .link-tile .vtitle{font-size:13px;color:var(--text-dim);}
+  .link-tile.empty{opacity:.45;cursor:default;}
+  .link-tile.empty:hover{border-color:var(--border);transform:none;}
+  .link-tile.empty .play{background:var(--border);color:var(--text-dim);}
+
+  .lightbox-content iframe{
+    width:min(90vw,960px);aspect-ratio:16/9;height:auto;border:0;display:block;border-radius:12px;background:#000;
+  }
+
+  /* Lightbox */
+  .lightbox{
+    position:fixed;inset:0;background:rgba(6,7,9,.92);
+    display:none;align-items:center;justify-content:center;z-index:100;
+    padding:24px;
+  }
+  .lightbox.open{display:flex;animation:fadeIn .2s ease;}
+  @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+  .lightbox-content{max-width:90vw;max-height:85vh;border-radius:12px;overflow:hidden;}
+  .lightbox-content img, .lightbox-content video{
+    max-width:90vw;max-height:85vh;display:block;border-radius:12px;
+  }
+  .lightbox-close{
+    position:absolute;top:20px;left:20px;width:38px;height:38px;
+    border-radius:50%;background:var(--surface);border:1px solid var(--border);
+    color:var(--text);display:flex;align-items:center;justify-content:center;
+    cursor:pointer;font-size:18px;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1 class="ph">Porn Hub</h1>
+  <p class="sub">custom porn hub   </p>
+</header>
+
+<div class="wrap">
+  <div class="tabs" id="tabs"></div>
+  <div id="panels"></div>
+</div>
+
+<div class="lightbox" id="lightbox">
+  <div class="lightbox-close" id="lightboxClose">✕</div>
+  <div class="lightbox-content" id="lightboxContent"></div>
+</div>
+
+<script>
+  /*
+    ساختار فولدرها (کنار فایل html بساز):
+
+    img/long/   video1.mp4  photo1.jpg ... photo5.jpg
+    img/fast/   video1.mp4  photo1.jpg ... photo5.jpg
+    img/turbo/  video1.mp4  photo1.jpg ... photo5.jpg
+    img/4/      video1.mp4  photo1.jpg ... photo5.jpg
+    img/5/      ...
+    img/6/      ...
+    img/7/      ...
+    img/8/      ...
+
+    برای تغییر اسم تب‌ها فقط "label" رو در لیست پایین عوض کن.
+    اسم فولدر همون "key" هست.
+  */
+
+  const tabList = [
+    { key: 'long',  label: 'long' },
+    { key: 'fast',  label: 'fast' },
+    { key: 'turbo', label: 'turbo ' },
+    { key: '4',     label: '۴' },
+    { key: '5',     label: '۵' },
+    { key: '6',     label: '۶' },
+    { key: '7',     label: '۷' },
+    { key: '8',     label: '۸' },
+    { key: 'videos', label: 'video', links: true }
+  ];
+
+  /*
+    تب «ویدیو»: لینک ۱۵ تا ویدیو رو اینجا بذار (بین ' ').
+    هر لینک می‌تونه یکی از اینا باشه:
+      - لینک مستقیم فایل ویدیو (.mp4 / .webm)
+      - لینک یوتیوب (watch?v=... یا youtu.be/...)
+      - لینک آپارات (aparat.com/v/...)
+      - هر لینک embed دیگه (iframe)
+    اگه می‌خوای برای ویدیو اسم بذاری، به جای رشته از { url: '...', title: '...' } استفاده کن.
+    خط خالی ('') یعنی هنوز لینکی نذاشتی.
+  */
+  const videoLinks = [
+    'https://colliderporn.com/en/look/34004829/teen.php', 'https://colliderporn.com/en/look/32259920/teen.php', 'https://colliderporn.com/en/look/35119086/teen.php', 'https://colliderporn.com/en/look/35086510/teen.php', 'https://colliderporn.com/en/look/35053705/teen.php',
+    'https://colliderporn.com/en/look/35094367/teen.php', 'https://colliderporn.com/en/look/34115240/teen.php', 'https://colliderporn.com/en/look/35397168/teen.php', 'https://colliderporn.com/en/look/35769703/teen.php', 'https://colliderporn.com/en/look/35079200/masturbation.php',
+    'https://colliderporn.com/en/look/35231134/asian.php', 'https://colliderporn.com/en/look/35320148/asian.php', 'https://colliderporn.com/en/look/32969688/amateur.php', 'https://colliderporn.com/en/look/35271117/amateur.php', 'https://colliderporn.com/en/look/35287129/amateur.php'
+  ];
+
+  function toEmbed(url) {
+    let m;
+    if ((m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([\w-]{11})/))) {
+      return { kind: 'iframe', src: 'https://www.youtube.com/embed/' + m[1] + '?autoplay=1' };
+    }
+    if ((m = url.match(/aparat\.com\/v\/([\w]+)/))) {
+      return { kind: 'iframe', src: 'https://www.aparat.com/video/video/embed/videohash/' + m[1] + '/vt/frame' };
+    }
+    if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(url)) {
+      return { kind: 'video', src: url };
+    }
+    return { kind: 'iframe', src: url };
+  }
+
+  function mediaList(key) {
+    const photos = [];
+    for (let i = 1; i <= 5; i++) {
+      photos.push({ type: 'image', src: `img/${key}/photo${i}.jpg` });
+    }
+    return [{ type: 'video', src: `img/${key}/video1.mp4` }, ...photos];
+  }
+
+  const tabsEl = document.getElementById('tabs');
+  const panelsEl = document.getElementById('panels');
+
+  tabList.forEach((t, idx) => {
+    const tabEl = document.createElement('div');
+    tabEl.className = 'tab' + (idx === 0 ? ' active' : '');
+    tabEl.textContent = t.label;
+    tabsEl.appendChild(tabEl);
+
+    const panel = document.createElement('div');
+    panel.className = 'panel' + (idx === 0 ? ' active' : '');
+    panelsEl.appendChild(panel);
+
+    if (t.links) {
+      panel.classList.add('links-panel');
+      videoLinks.forEach((entry, i) => {
+        const url = typeof entry === 'string' ? entry : entry.url;
+        const title = (typeof entry === 'object' && entry.title) ? entry.title : 'ویدیو ' + (i + 1);
+        const tile = document.createElement('div');
+        tile.className = 'tile link-tile' + (url ? '' : ' empty');
+        tile.style.animationDelay = (i * 0.05) + 's';
+        tile.innerHTML = `<div class="play">▶</div><div class="vtitle">${title}</div>`;
+        if (url) tile.addEventListener('click', () => openLightbox(toEmbed(url)));
+        panel.appendChild(tile);
+      });
+    } else mediaList(t.key).forEach((item, i) => {
+      const tile = document.createElement('div');
+      tile.className = 'tile' + (item.type === 'video' ? ' video-tile' : '');
+      tile.style.animationDelay = (i * 0.07) + 's';
+
+      if (item.type === 'video') {
+        tile.innerHTML = `
+          <video src="${item.src}" muted loop playsinline autoplay></video>
+          <div class="badge">▶ ویدیو</div>
+        `;
+      } else {
+        tile.innerHTML = `<img src="${item.src}" alt="">`;
+      }
+
+      tile.addEventListener('click', () => openLightbox(item));
+      panel.appendChild(tile);
+    });
+
+    tabEl.addEventListener('click', () => {
+      tabsEl.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+      panelsEl.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
+      tabEl.classList.add('active');
+      panel.classList.add('active');
+    });
+  });
+
+  const lightbox = document.getElementById('lightbox');
+  const lightboxContent = document.getElementById('lightboxContent');
+
+  function openLightbox(item) {
+    const kind = item.kind || item.type;
+    lightboxContent.innerHTML =
+      kind === 'iframe' ? `<iframe src="${item.src}" allow="autoplay; fullscreen; encrypted-media" allowfullscreen></iframe>`
+      : kind === 'video' ? `<video src="${item.src}" controls autoplay></video>`
+      : `<img src="${item.src}" alt="">`;
+    lightbox.classList.add('open');
+  }
+
+  document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+  lightbox.addEventListener('click', e => { if (e.target === lightbox) closeLightbox(); });
+
+  function closeLightbox() {
+    lightbox.classList.remove('open');
+    lightboxContent.innerHTML = '';
+  }
+</script>
+</body>
+</html>
